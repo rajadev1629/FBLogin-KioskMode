@@ -1,7 +1,11 @@
 package com.raja_dev.fblogin;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -11,12 +15,18 @@ import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
+import com.facebook.Profile;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.pkmmte.view.CircularImageView;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Created by User on 12/29/2015.
@@ -48,25 +58,30 @@ public class FBLogin extends Activity {
         mLoginButton = (LoginButton) findViewById(R.id.login_button);
         mLoginButton.setReadPermissions("user_friends");
 
-        mLoginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+
+        LoginManager.getInstance().registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                AccessToken accessToken = loginResult.getAccessToken();
-                Log.v(logString, "Successfull login");
+                updateUI();
+
             }
 
             @Override
             public void onCancel() {
-                Log.v(logString, "Cancel login");
+                Log.v(logString,"Login cancle");
+
             }
 
             @Override
             public void onError(FacebookException error) {
-                Log.e(logString, "we are getting error");
-                error.printStackTrace();
 
+                Log.e(logString, "error");
+                error.printStackTrace();
             }
         });
+
+
+
 
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -114,4 +129,45 @@ public class FBLogin extends Activity {
         AppIndex.AppIndexApi.end(client, viewAction);
         client.disconnect();
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void updateUI(){
+        Profile profile = Profile.getCurrentProfile();
+
+        txtName.setText(profile.getName());
+          new FbImageAsync().execute(profile.getId());
+    }
+
+   class FbImageAsync extends AsyncTask<String, Void, Bitmap>{
+
+       @Override
+       protected Bitmap doInBackground(String... params) {
+           try {
+               Log.v(logString, params[0]);
+               URL fbImageUrl = new URL("https://graph.facebook.com/" +params[0] + "/picture?type=large");
+               Bitmap bitmap = BitmapFactory.decodeStream(fbImageUrl.openConnection().getInputStream());
+               return bitmap;
+           } catch (MalformedURLException e) {
+               e.printStackTrace();
+           } catch (IOException e) {
+               e.printStackTrace();
+           }
+           return  null;
+       }
+
+       @Override
+       protected void onPostExecute(Bitmap bitmap) {
+           super.onPostExecute(bitmap);
+           if (bitmap != null){
+
+               mCircularImageView.setImageBitmap(bitmap);
+           }
+
+       }
+   }
 }
