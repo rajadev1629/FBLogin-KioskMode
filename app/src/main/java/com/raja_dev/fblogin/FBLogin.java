@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.Profile;
+import com.facebook.ProfileTracker;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
@@ -33,10 +35,11 @@ import java.net.URL;
  */
 public class FBLogin extends Activity {
     CircularImageView mCircularImageView;
-    TextView txtName, txtDOB;
+    TextView txtName;
     LoginButton mLoginButton;
     CallbackManager mCallbackManager;
     private static String logString = "FACEBOOK LOGIN :: ";
+    ProfileTracker profileTracker;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -53,7 +56,7 @@ public class FBLogin extends Activity {
 
         mCircularImageView = (CircularImageView) findViewById(R.id.imageView);
         txtName = (TextView) findViewById(R.id.txt_name);
-        txtDOB = (TextView) findViewById(R.id.txt_dob);
+//        txtDOB = (TextView) findViewById(R.id.txt_dob);
         txtName.setText("this is sample text");
         mLoginButton = (LoginButton) findViewById(R.id.login_button);
         mLoginButton.setReadPermissions("user_friends");
@@ -68,7 +71,7 @@ public class FBLogin extends Activity {
 
             @Override
             public void onCancel() {
-                Log.v(logString,"Login cancle");
+                Log.v(logString, "Login cancle");
 
             }
 
@@ -79,6 +82,15 @@ public class FBLogin extends Activity {
                 error.printStackTrace();
             }
         });
+
+        profileTracker = new ProfileTracker() {
+            @Override
+            protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                Log.v(logString, "onCurrentProfileTracker");
+                updateUI();
+
+            }
+        };
 
 
 
@@ -138,9 +150,16 @@ public class FBLogin extends Activity {
 
     private void updateUI(){
         Profile profile = Profile.getCurrentProfile();
+        if(profile != null){
+            txtName.setText(profile.getName());
+            new FbImageAsync().execute(profile.getId());
 
-        txtName.setText(profile.getName());
-          new FbImageAsync().execute(profile.getId());
+        } else {
+            txtName.setText("UserName");
+            mCircularImageView.setImageResource(R.drawable.com_facebook_profile_picture_blank_portrait);
+
+        }
+
     }
 
    class FbImageAsync extends AsyncTask<String, Void, Bitmap>{

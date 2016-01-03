@@ -1,24 +1,65 @@
 package com.raja_dev.fblogin;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.Profile;
+import com.facebook.ProfileTracker;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.pkmmte.view.CircularImageView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    CircularImageView mCircularImageView;
+    TextView txtName;
+    Button btnClose;
+    CallbackManager mCallbackManager;
+    ProfileTracker profileTracker;
+    DrawerLayout drawer;
+    private static final String TAG = "DemoProject";
+
+    private List<FeedItem> feedsList;
+    private MyRecyclerAdapter adapter;
+    private ProgressBar progressBar;
+    private RecyclerView mRecyclerView;
 
 
     @Override
@@ -29,16 +70,12 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        //Initialise facebook SDK
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        mCallbackManager = CallbackManager.Factory.create();
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
@@ -46,6 +83,62 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        View header = navigationView.inflateHeaderView(R.layout.nav_header_main);
+        mCircularImageView = (CircularImageView)header.findViewById(R.id.imageView);
+        txtName = (TextView) header.findViewById(R.id.txt_name);
+        btnClose = (Button) header.findViewById(R.id.btnOpenClose);
+        mCircularImageView.setImageResource(R.drawable.com_facebook_profile_picture_blank_portrait);
+
+        updateUI();
+
+        btnClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawer.closeDrawer(GravityCompat.START);
+            }
+        });
+
+        LoginManager.getInstance().registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                updateUI();
+
+            }
+
+            @Override
+            public void onCancel() {
+                Log.v(TAG, "Login cancle");
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+                Log.e(TAG, "error");
+                error.printStackTrace();
+            }
+        });
+
+        profileTracker = new ProfileTracker() {
+            @Override
+            protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                updateUI();
+
+            }
+        };
+
+        //Adding main Content to the view
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+        progressBar.setVisibility(View.VISIBLE);
+
+        // Downloading data from below url
+        final String url = "http://javatechig.com/?json=get_recent_posts&count=45";
+        new AsyncHttpTask().execute(url);
 
     }
 
@@ -85,7 +178,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
-        int id = item.getItemId();
+        /*int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
             // Handle the camera action
@@ -103,7 +196,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        drawer.closeDrawer(GravityCompat.START);*/
         return true;
     }
 
@@ -117,5 +210,122 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         AppEventsLogger.deactivateApp(this);
+    }
+
+    private void updateUI(){
+        Profile profile = Profile.getCurrentProfile();
+        if(profile != null){
+            txtName.setText(profile.getName());
+            new FbImageAsync().execute(profile.getId());
+
+        } else {
+            txtName.setText("");
+            mCircularImageView.setImageResource(R.drawable.com_facebook_profile_picture_blank_portrait);
+
+        }
+
+    }
+
+    class FbImageAsync extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            try {
+                URL fbImageUrl = new URL("https://graph.facebook.com/" +params[0] + "/picture?type=large");
+                Bitmap bitmap = BitmapFactory.decodeStream(fbImageUrl.openConnection().getInputStream());
+                return bitmap;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return  null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            if (bitmap != null){
+
+                mCircularImageView.setImageBitmap(bitmap);
+            }
+
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    //Main Content
+
+    public class AsyncHttpTask extends AsyncTask<String, Void, Integer> {
+
+        @Override
+        protected void onPreExecute() {
+            setProgressBarIndeterminateVisibility(true);
+        }
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            Integer result = 0;
+            HttpURLConnection urlConnection;
+            try {
+                URL url = new URL(params[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                int statusCode = urlConnection.getResponseCode();
+
+                // 200 represents HTTP OK
+                if (statusCode == 200) {
+                    BufferedReader r = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        response.append(line);
+                    }
+                    parseResult(response.toString());
+                    result = 1; // Successful
+                } else {
+                    result = 0; //"Failed to fetch data!";
+                }
+            } catch (Exception e) {
+                Log.d(TAG, e.getLocalizedMessage());
+            }
+            return result; //"Failed to fetch data!";
+        }
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            // Download complete. Let us update UI
+            progressBar.setVisibility(View.GONE);
+
+            if (result == 1) {
+                adapter = new MyRecyclerAdapter(FeedListActivity.this, feedsList);
+                mRecyclerView.setAdapter(adapter);
+            } else {
+                Toast.makeText(FeedListActivity.this, "Failed to fetch data!", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void parseResult(String result) {
+        try {
+            JSONObject response = new JSONObject(result);
+            JSONArray posts = response.optJSONArray("posts");
+            feedsList = new ArrayList<>();
+
+            for (int i = 0; i < posts.length(); i++) {
+                JSONObject post = posts.optJSONObject(i);
+                FeedItem item = new FeedItem();
+                item.setTitle(post.optString("title"));
+                item.setThumbnail(post.optString("thumbnail"));
+
+                feedsList.add(item);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }

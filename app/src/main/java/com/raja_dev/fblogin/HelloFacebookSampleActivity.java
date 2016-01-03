@@ -129,6 +129,7 @@ public class HelloFacebookSampleActivity extends FragmentActivity {
                     @Override
                     public void onSuccess(LoginResult loginResult) {
                         handlePendingAction();
+                        Log.v("HelloFaceBook :: ", "onSuccess()");
                         updateUI();
                     }
 
@@ -138,6 +139,7 @@ public class HelloFacebookSampleActivity extends FragmentActivity {
                             showAlert();
                             pendingAction = PendingAction.NONE;
                         }
+                        Log.v("HelloFaceBook :: ","onCancel()");
                         updateUI();
                     }
 
@@ -148,6 +150,7 @@ public class HelloFacebookSampleActivity extends FragmentActivity {
                             showAlert();
                             pendingAction = PendingAction.NONE;
                         }
+                        Log.v("HelloFaceBook :: ","onError()");
                         updateUI();
                     }
 
@@ -175,6 +178,7 @@ public class HelloFacebookSampleActivity extends FragmentActivity {
         profileTracker = new ProfileTracker() {
             @Override
             protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                Log.v("HelloFaceBook :: ","OnCurrentProfileChanged()");
                 updateUI();
                 // It's possible that we were waiting for Profile to be populated in order to
                 // post a status update.
@@ -217,6 +221,7 @@ public class HelloFacebookSampleActivity extends FragmentActivity {
         // launched into.
         AppEventsLogger.activateApp(this);
 
+        Log.v("HelloFaceBook :: ", "onResume()");
         updateUI();
     }
 
@@ -266,6 +271,9 @@ public class HelloFacebookSampleActivity extends FragmentActivity {
         postPhotoButton.setEnabled(enableButtons || canPresentShareDialogWithPhotos);
 
         Profile profile = Profile.getCurrentProfile();
+
+        Log.v("Facebook :: ","Profile ::" + profile+"\nEnableButton :: "+enableButtons);
+
 
         if (enableButtons && profile != null) {
             profilePictureView.setProfileId(profile.getId());
