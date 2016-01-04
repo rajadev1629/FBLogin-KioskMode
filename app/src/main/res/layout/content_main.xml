@@ -13,16 +13,25 @@
     tools:showIn="@layout/app_bar_main">
 
 
+    <Button
+        android:id="@+id/btnGridView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Grid view"/>
+
+
     <view
         android:id="@+id/recycler_view"
         class="android.support.v7.widget.RecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        android:layout_below="@id/btnGridView"/>
 
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
 </RelativeLayout>

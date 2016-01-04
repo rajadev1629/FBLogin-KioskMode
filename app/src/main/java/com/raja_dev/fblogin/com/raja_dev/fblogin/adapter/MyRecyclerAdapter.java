@@ -2,6 +2,7 @@ package com.raja_dev.fblogin.com.raja_dev.fblogin.adapter;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.view.LayoutInflater;
@@ -11,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.raja_dev.fblogin.ImageDetailsActivity;
 import com.raja_dev.fblogin.R;
 import com.squareup.picasso.Picasso;
 
@@ -40,7 +42,7 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Cu
     public void onBindViewHolder(CustomViewHolder customViewHolder, final int position) {
         FeedItem feedItem = feedItemList.get(position);
 
-        //Download image using picasso library
+         //Download image using picasso library
         Picasso.with(mContext).load(feedItem.getThumbnail())
                 .error(R.drawable.com_facebook_tooltip_blue_background)
                 .placeholder(R.drawable.com_facebook_tooltip_blue_background)
@@ -51,15 +53,17 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Cu
         customViewHolder.textView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Intent intent = new Intent(mContext, ImageDetailsActivity.class);
+                intent.putExtra("position",position);
+                mContext.startActivity(intent);
             }
         });
-        customViewHolder.imageView.setOnClickListener(new View.OnClickListener() {
+        customViewHolder.imageView.setOnClickListener(  new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                Toast.makeText(mContext, "The position click item :: "+position, Toast.LENGTH_LONG).show();
-
+                Intent intent = new Intent(mContext, ImageDetailsActivity.class);
+                intent.putExtra("position",position);
+                mContext.startActivity(intent);
             }
         });
 

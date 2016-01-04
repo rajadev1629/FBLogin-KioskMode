@@ -49,20 +49,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
 
     CircularImageView mCircularImageView;
     TextView txtName;
-    Button btnClose;
+    Button btnClose, btnGridView;
     CallbackManager mCallbackManager;
     ProfileTracker profileTracker;
     DrawerLayout drawer;
     private static final String TAG = "DemoProject";
 
-    private List<FeedItem> feedsList;
+    public static List<FeedItem> feedsList;
     private MyRecyclerAdapter adapter;
     private ProgressBar progressBar;
     private RecyclerView mRecyclerView;
+    int result = 0;
 
 
     @Override
@@ -87,10 +88,20 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+
         View header = navigationView.inflateHeaderView(R.layout.nav_header_main);
         mCircularImageView = (CircularImageView)header.findViewById(R.id.imageView);
         txtName = (TextView) header.findViewById(R.id.txt_name);
         btnClose = (Button) header.findViewById(R.id.btnOpenClose);
+
+        btnGridView = (Button) findViewById(R.id.btnGridView);
+        btnGridView.setOnClickListener(this);
+
+
         mCircularImageView.setImageResource(R.drawable.com_facebook_profile_picture_blank_portrait);
 
         updateUI();
@@ -133,15 +144,8 @@ public class MainActivity extends AppCompatActivity
 
         //Adding main Content to the view
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        progressBar.setVisibility(View.VISIBLE);
 
-        // Downloading data from below url
-        final String url = "http://javatechig.com/?json=get_recent_posts&count=45";
-        new AsyncHttpTask().execute(url);
 
     }
 
@@ -218,13 +222,35 @@ public class MainActivity extends AppCompatActivity
     private void updateUI(){
         Profile profile = Profile.getCurrentProfile();
         if(profile != null){
+            btnGridView.setEnabled(true);
+            progressBar.setVisibility(View.VISIBLE);
             txtName.setText(profile.getName());
             new FbImageAsync().execute(profile.getId());
+
+            //Start fetching Data once facebook login is done
+            // Downloading data from below url
+            final String url = "http://javatechig.com/?json=get_recent_posts&count=45";
+            new AsyncHttpTask().execute(url);
 
         } else {
             txtName.setText("");
             mCircularImageView.setImageResource(R.drawable.com_facebook_profile_picture_blank_portrait);
+            btnGridView.setEnabled(false);
+        }
 
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+
+            case R.id.btnGridView:
+                if (result == 1){
+                    startActivity(new Intent(MainActivity.this, GridActivity.class));
+                } else {
+                    Toast.makeText(MainActivity.this, "Data are not available", Toast.LENGTH_LONG).show();
+                }
         }
 
     }
@@ -273,7 +299,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected Integer doInBackground(String... params) {
-            Integer result = 0;
+            result = 0;
             HttpURLConnection urlConnection;
             try {
                 URL url = new URL(params[0]);
