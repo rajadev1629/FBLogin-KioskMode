@@ -1,6 +1,20 @@
 package com.raja_dev.fblogin.com.raja_dev.fblogin.adapter;
 
 
+import android.content.Context;
+import android.support.v7.widget.RecyclerView;
+import android.text.Html;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.raja_dev.fblogin.R;
+import com.squareup.picasso.Picasso;
+
+import java.util.List;
 
 /**
  * Created by raja_dev on 4/1/16.
@@ -23,21 +37,56 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Cu
     }
 
     @Override
-    public void onBindViewHolder(CustomViewHolder customViewHolder, int i) {
-        FeedItem feedItem = feedItemList.get(i);
+    public void onBindViewHolder(CustomViewHolder customViewHolder, final int position) {
+        FeedItem feedItem = feedItemList.get(position);
 
         //Download image using picasso library
         Picasso.with(mContext).load(feedItem.getThumbnail())
-                .error(R.drawable.placeholder)
-                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.com_facebook_tooltip_blue_background)
+                .placeholder(R.drawable.com_facebook_tooltip_blue_background)
                 .into(customViewHolder.imageView);
 
         //Setting text view title
         customViewHolder.textView.setText(Html.fromHtml(feedItem.getTitle()));
+        customViewHolder.textView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        customViewHolder.imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Toast.makeText(mContext, "The position click item :: "+position, Toast.LENGTH_LONG).show();
+
+            }
+        });
+
+        customViewHolder.textView.setTag(customViewHolder);
+        customViewHolder.imageView.setTag(customViewHolder);
+
+    }
+
+    @Override
+    public void onBindViewHolder(CustomViewHolder holder, int position, List<Object> payloads) {
+        super.onBindViewHolder(holder, position, payloads);
+
     }
 
     @Override
     public int getItemCount() {
         return (null != feedItemList ? feedItemList.size() : 0);
+    }
+
+    class CustomViewHolder extends RecyclerView.ViewHolder {
+        protected ImageView imageView;
+        protected TextView textView;
+
+        public CustomViewHolder(View view) {
+            super(view);
+            this.imageView = (ImageView) view.findViewById(R.id.thumbnail);
+            this.textView = (TextView) view.findViewById(R.id.title);
+        }
     }
 }

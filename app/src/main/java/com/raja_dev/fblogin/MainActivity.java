@@ -32,6 +32,8 @@ import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.pkmmte.view.CircularImageView;
+import com.raja_dev.fblogin.com.raja_dev.fblogin.adapter.FeedItem;
+import com.raja_dev.fblogin.com.raja_dev.fblogin.adapter.MyRecyclerAdapter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,6 +46,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -302,10 +305,10 @@ public class MainActivity extends AppCompatActivity
             progressBar.setVisibility(View.GONE);
 
             if (result == 1) {
-                adapter = new MyRecyclerAdapter(FeedListActivity.this, feedsList);
+                adapter = new MyRecyclerAdapter(MainActivity.this, feedsList);
                 mRecyclerView.setAdapter(adapter);
             } else {
-                Toast.makeText(FeedListActivity.this, "Failed to fetch data!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Failed to fetch data!", Toast.LENGTH_SHORT).show();
             }
         }
     }
